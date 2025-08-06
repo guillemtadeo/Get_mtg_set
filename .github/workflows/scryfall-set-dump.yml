@@ -7,61 +7,36 @@ on:
         description: 'Código del set (ej: otj, woe, mh3)'
         required: true
       unique:
-        description: 'Agrupación Scryfall: prints/cards/art'
+        description: 'prints/cards/art'
         required: false
         default: 'prints'
       include_tokens:
-        description: 'Incluir tokens (true/false)'
+        description: 'true/false'
         required: false
         default: 'false'
-      commit_results:
-        description: 'Hacer commit de los CSV (default: false)'
-        required: false
-        default: 'false'
-
-permissions:
-  contents: write  # solo si commit_results == 'true'
 
 jobs:
   run:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11', cache: 'pip' }
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
           pip install requests
-
+      - name: Debug list
+        run: ls -la && ls -la scripts || true
       - name: Run dump
         env:
           SET_CODE: ${{ inputs.set_code }}
           UNIQUE: ${{ inputs.unique }}
           INCLUDE_TOKENS: ${{ inputs.include_tokens }}
+          USER_AGENT: Get_mtg_set/${{ github.run_id }} (+https://github.com/${{ github.repository }})
         run: python scripts/dump_set.py
-
-      - name: Upload CSVs as artifact
+      - name: Upload CSVs
         uses: actions/upload-artifact@v4
         with:
           name: scryfall-${{ inputs.set_code }}-${{ inputs.unique }}
           path: output/
-
-      - name: Commit and push (optional)
-        if: ${{ inputs.commit_results == 'true' }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if ! git diff --cached --quiet; then
-            git commit -m "Set dump ${{ inputs.set_code }} (unique=${{ inputs.unique }}, tokens=${{ inputs.include_tokens }})"
-            git push
-          else
-            echo "No changes to commit"
-          fi
