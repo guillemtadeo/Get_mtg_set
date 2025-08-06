@@ -20,14 +20,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
-        with: { python-version: '3.11', cache: 'pip' }
+        with:
+          python-version: '3.11'
+
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
           pip install requests
+
       - name: Debug list
-        run: ls -la && ls -la scripts || true
+        run: |
+          pwd
+          ls -la
+          ls -la scripts || true
+
       - name: Run dump
         env:
           SET_CODE: ${{ inputs.set_code }}
@@ -35,6 +43,7 @@ jobs:
           INCLUDE_TOKENS: ${{ inputs.include_tokens }}
           USER_AGENT: Get_mtg_set/${{ github.run_id }} (+https://github.com/${{ github.repository }})
         run: python scripts/dump_set.py
+
       - name: Upload CSVs
         uses: actions/upload-artifact@v4
         with:
